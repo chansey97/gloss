@@ -174,11 +174,11 @@ handle_reshape
   :: IORef world
   -> (Event -> world -> IO world)
   -> ReshapeCallback
-handle_reshape worldRef eventFn stateRef (width,height)
+handle_reshape worldRef eventFn backendRef (width,height)
  = do   world  <- readIORef worldRef
         newWorldMaybe <- eventFn (EventResize (width, height)) world
         case newWorldMaybe of
           Nothing -> exitBackend backendRef
           Just newWorld -> do
             writeIORef worldRef newWorld
-            viewState_reshape stateRef (width, height)
+            viewState_reshape backendRef (width, height)
