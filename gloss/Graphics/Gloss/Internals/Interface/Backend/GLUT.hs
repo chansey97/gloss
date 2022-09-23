@@ -50,8 +50,7 @@ instance Backend GLUTState where
         initBackendState           = glutStateInit
         initializeBackend          = initializeGLUT
 
-        -- non-freeglut doesn't like this: (\_ -> GLUT.leaveMainLoop)
-        exitBackend                = (\_ -> System.exitWith System.ExitSuccess)
+        exitBackend                = (\_ -> GLUT.leaveMainLoop)
 
         openWindow                 = openWindowGLUT
         dumpBackendState           = dumpStateGLUT

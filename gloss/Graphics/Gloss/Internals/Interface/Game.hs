@@ -31,7 +31,7 @@ playWithBackendIO
         -> world        -- ^ The initial world.
         -> (world -> IO Picture)
                         -- ^ A function to convert the world to a picture.
-        -> (Event -> world -> IO world)
+        -> (Event -> world -> IO (Maybe world))
                         -- ^ A function to handle input events.
         -> (Float -> world -> IO world)
                         -- ^ A function to step the world one iteration.
@@ -115,7 +115,7 @@ playWithBackendIO
 callback_keyMouse
         :: IORef world                  -- ^ ref to world state
         -> IORef ViewPort
-        -> (Event -> world -> IO world) -- ^ fn to handle input events
+        -> (Event -> world -> IO (Maybe world)) -- ^ fn to handle input events
         -> Callback
 
 callback_keyMouse worldRef viewRef eventFn
@@ -125,20 +125,22 @@ callback_keyMouse worldRef viewRef eventFn
 handle_keyMouse
         :: IORef a
         -> t
-        -> (Event -> a -> IO a)
+        -> (Event -> a -> IO (Maybe a))
         -> KeyboardMouseCallback
 
 handle_keyMouse worldRef _ eventFn backendRef key keyState keyMods pos
  = do   ev         <- keyMouseEvent backendRef key keyState keyMods pos
         world      <- readIORef worldRef
-        world'     <- eventFn ev world
-        writeIORef worldRef world'
+        newWorldMaybe     <- eventFn ev world
+        case newWorldMaybe of
+          Nothing -> exitBackend backendRef
+          Just newWorld -> writeIORef worldRef newWorld
 
 
 -- | Callback for Motion events.
 callback_motion
         :: IORef world                  -- ^ ref to world state
-        -> (Event -> world -> IO world) -- ^ fn to handle input events
+        -> (Event -> world -> IO (Maybe world)) -- ^ fn to handle input events
         -> Callback
 
 callback_motion worldRef eventFn
@@ -147,20 +149,22 @@ callback_motion worldRef eventFn
 
 handle_motion
         :: IORef a
-        -> (Event -> a -> IO a)
+        -> (Event -> a -> IO (Maybe a))
         -> MotionCallback
 
 handle_motion worldRef eventFn backendRef pos
  = do   ev       <- motionEvent backendRef pos
         world    <- readIORef worldRef
-        world'   <- eventFn ev world
-        writeIORef worldRef world'
+        newWorldMaybe     <- eventFn ev world
+        case newWorldMaybe of
+          Nothing -> exitBackend backendRef
+          Just newWorld -> writeIORef worldRef newWorld
 
 
 -- | Callback for Handle reshape event.
 callback_reshape
   :: IORef world
-  -> (Event -> world -> IO world)
+  -> (Event -> world -> IO (Maybe world))
   -> Callback
 callback_reshape worldRef eventFN
         = Reshape (handle_reshape worldRef eventFN)
@@ -168,10 +172,13 @@ callback_reshape worldRef eventFN
 
 handle_reshape
   :: IORef world
-  -> (Event -> world -> IO world)
+  -> (Event -> world -> IO (Maybe world))
   -> ReshapeCallback
-handle_reshape worldRef eventFn stateRef (width,height)
+handle_reshape worldRef eventFn backendRef (width,height)
  = do   world  <- readIORef worldRef
-        world' <- eventFn (EventResize (width, height)) world
-        writeIORef worldRef world'
-        viewState_reshape stateRef (width, height)
+        newWorldMaybe <- eventFn (EventResize (width, height)) world
+        case newWorldMaybe of
+          Nothing -> exitBackend backendRef
+          Just newWorld -> do
+            writeIORef worldRef newWorld
+            viewState_reshape backendRef (width, height)

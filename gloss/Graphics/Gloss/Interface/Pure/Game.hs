@@ -25,7 +25,7 @@ play    :: Display              -- ^ Display mode.
         -> Int                  -- ^ Number of simulation steps to take for each second of real time.
         -> world                -- ^ The initial world.
         -> (world -> Picture)   -- ^ A function to convert the world a picture.
-        -> (Event -> world -> world)
+        -> (Event -> world -> Maybe world)
                 -- ^ A function to handle input events.
         -> (Float -> world -> world)
                 -- ^ A function to step the world one iteration.
@@ -41,5 +41,5 @@ play    display backColor simResolution
                         (return . worldToPicture)
                         (\event world -> return $ worldHandleEvent event world)
                         (\time  world -> return $ worldAdvance     time  world)
-                        True
+                        False
         return ()
