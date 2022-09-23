@@ -125,7 +125,7 @@ callback_keyMouse worldRef viewRef eventFn
 handle_keyMouse
         :: IORef a
         -> t
-        -> (Event -> a -> IO a)
+        -> (Event -> a -> IO (Maybe a))
         -> KeyboardMouseCallback
 
 handle_keyMouse worldRef _ eventFn backendRef key keyState keyMods pos
@@ -149,7 +149,7 @@ callback_motion worldRef eventFn
 
 handle_motion
         :: IORef a
-        -> (Event -> a -> IO a)
+        -> (Event -> a -> IO (Maybe a))
         -> MotionCallback
 
 handle_motion worldRef eventFn backendRef pos
@@ -172,7 +172,7 @@ callback_reshape worldRef eventFN
 
 handle_reshape
   :: IORef world
-  -> (Event -> world -> IO world)
+  -> (Event -> world -> IO (Maybe world))
   -> ReshapeCallback
 handle_reshape worldRef eventFn backendRef (width,height)
  = do   world  <- readIORef worldRef
