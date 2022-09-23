@@ -18,7 +18,6 @@ import Control.Monad
 import Graphics.Rendering.OpenGL                        (($=), get)
 import qualified Graphics.Rendering.OpenGL.GL           as GL
 import qualified Graphics.Rendering.OpenGL.GLU.Errors   as GLU
-import qualified Graphics.UI.GLUT                       as GLUT
 
 
 -- | Render a picture into the current OpenGL context.
@@ -86,10 +85,7 @@ drawPicture state circScale picture
         --      text looks weird when we've got blend on,
         --      so disable it during the renderString call.
         Text str
-         -> do
-                GL.blend        $= GL.Disabled
-                GL.preservingMatrix $ GLUT.renderString GLUT.Roman str
-                GL.blend        $= GL.Enabled
+         -> pure ()
 
         -- colors with float components.
         Color col p

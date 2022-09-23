@@ -16,22 +16,6 @@ import qualified Graphics.Rendering.OpenGL as GL
 import qualified Control.Exception         as X
 
 
--- [Note: FreeGlut]
--- ~~~~~~~~~~~~~~~~
--- We use GLUT for font rendering.
---   On freeglut-based installations (usually linux) we need to explicitly
---   initialize GLUT before we can use any of it's functions.
---
----  We also need to deinitialize (exit) GLUT when we close the GLFW
---   window, otherwise opening a gloss window again from GHCi will crash.
---   For the OS X and Windows version of GLUT there are no such restrictions.
---
---   We assume also assume that only linux installations use freeglut.
---
-#ifdef linux_HOST_OS
-import qualified Graphics.UI.GLUT          as GLUT
-#endif
-
 import Graphics.Gloss.Internals.Interface.Backend.Types
 
 
@@ -114,11 +98,6 @@ initializeGLFW _ debug
         _                   <- GLFW.init
         glfwVersion         <- GLFW.getVersion
 
-#ifdef linux_HOST_OS
--- See [Note: FreeGlut] for why we need this.
-        (_progName, _args)  <- GLUT.getArgsAndInitialize
-#endif
-
         when debug
          $ putStr  $ "  glfwVersion        = " ++ show glfwVersion   ++ "\n"
 
@@ -128,10 +107,6 @@ initializeGLFW _ debug
 exitGLFW :: IORef GLFWState -> IO ()
 exitGLFW ref
  = do
-#ifdef linux_HOST_OS
--- See [Note: FreeGlut] on why we exit GLUT for Linux
-        GLUT.exit
-#endif
         win <- windowHandle ref
         GLFW.setWindowShouldClose win True
 
@@ -292,10 +267,6 @@ installWindowCloseCallbackGLFW ref
  where
   winClosed :: GLFW.WindowCloseCallback
   winClosed _win = do
-#ifdef linux_HOST_OS
--- See [Note: FreeGlut] for why we need this.
-        GLUT.exit
-#endif
         return ()
 
 -- Reshape --------------------------------------------------------------------

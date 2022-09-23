@@ -29,8 +29,8 @@ playWithBackendIO
         -> Color        -- ^ Background color.
         -> Int          -- ^ Number of simulation steps to take for each second of real time.
         -> world        -- ^ The initial world.
-        -> (world -> IO Picture)
-                        -- ^ A function to convert the world to a picture.
+        -> (world -> IO (Maybe Picture))
+                        -- ^ A function to convert the world to a picture. Returns @Nothing@ to exit the application.
         -> (Event -> world -> IO world)
                         -- ^ A function to handle input events.
         -> (Float -> world -> IO world)
@@ -68,24 +68,28 @@ playWithBackendIO
              = do
                 -- convert the world to a picture
                 world           <- readIORef worldSR
-                picture         <- worldToPicture world
+                pictureMaybe    <- worldToPicture world
 
-                -- display the picture in the current view
-                renderS         <- readIORef renderSR
-                viewPort        <- readIORef viewSR
+                case pictureMaybe of
+                  Nothing -> exitBackend backendRef
+                  Just picture -> do
 
-                windowSize <- getWindowDimensions backendRef
+                    -- display the picture in the current view
+                    renderS         <- readIORef renderSR
+                    viewPort        <- readIORef viewSR
 
-                -- render the frame
-                displayPicture
-                        windowSize
-                        backgroundColor
-                        renderS
-                        (viewPortScale viewPort)
-                        (applyViewPortToPicture viewPort picture)
+                    windowSize <- getWindowDimensions backendRef
 
-                -- perform GC every frame to try and avoid long pauses
-                performGC
+                    -- render the frame
+                    displayPicture
+                            windowSize
+                            backgroundColor
+                            renderS
+                            (viewPortScale viewPort)
+                            (applyViewPortToPicture viewPort picture)
+
+                    -- perform GC every frame to try and avoid long pauses
+                    performGC
 
         let callbacks
              =  [ Callback.Display      (animateBegin animateSR)
