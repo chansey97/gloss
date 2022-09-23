@@ -29,11 +29,11 @@ playWithBackendIO
         -> Color        -- ^ Background color.
         -> Int          -- ^ Number of simulation steps to take for each second of real time.
         -> world        -- ^ The initial world.
-        -> (world -> IO (Maybe Picture))
-                        -- ^ A function to convert the world to a picture. Returns @Nothing@ to exit the application.
-        -> (Event -> world -> IO world)
+        -> (world -> IO Picture)
+                        -- ^ A function to convert the world to a picture.
+        -> (Event -> world -> IO (Maybe world))
                         -- ^ A function to handle input events.
-        -> (Float -> world -> IO world)
+        -> (Float -> world -> IO (Maybe world))
                         -- ^ A function to step the world one iteration.
                         --   It is passed the period of time (in seconds) needing to be advanced.
         -> Bool         -- ^ Whether to use the callback_exit or not.
@@ -68,28 +68,24 @@ playWithBackendIO
              = do
                 -- convert the world to a picture
                 world           <- readIORef worldSR
-                pictureMaybe    <- worldToPicture world
+                picture         <- worldToPicture world
 
-                case pictureMaybe of
-                  Nothing -> exitBackend backendRef
-                  Just picture -> do
+                -- display the picture in the current view
+                renderS         <- readIORef renderSR
+                viewPort        <- readIORef viewSR
 
-                    -- display the picture in the current view
-                    renderS         <- readIORef renderSR
-                    viewPort        <- readIORef viewSR
+                windowSize <- getWindowDimensions backendRef
 
-                    windowSize <- getWindowDimensions backendRef
+                -- render the frame
+                displayPicture
+                        windowSize
+                        backgroundColor
+                        renderS
+                        (viewPortScale viewPort)
+                        (applyViewPortToPicture viewPort picture)
 
-                    -- render the frame
-                    displayPicture
-                            windowSize
-                            backgroundColor
-                            renderS
-                            (viewPortScale viewPort)
-                            (applyViewPortToPicture viewPort picture)
-
-                    -- perform GC every frame to try and avoid long pauses
-                    performGC
+                -- perform GC every frame to try and avoid long pauses
+                performGC
 
         let callbacks
              =  [ Callback.Display      (animateBegin animateSR)
@@ -119,7 +115,7 @@ playWithBackendIO
 callback_keyMouse
         :: IORef world                  -- ^ ref to world state
         -> IORef ViewPort
-        -> (Event -> world -> IO world) -- ^ fn to handle input events
+        -> (Event -> world -> IO (Maybe world)) -- ^ fn to handle input events
         -> Callback
 
 callback_keyMouse worldRef viewRef eventFn
@@ -135,14 +131,16 @@ handle_keyMouse
 handle_keyMouse worldRef _ eventFn backendRef key keyState keyMods pos
  = do   ev         <- keyMouseEvent backendRef key keyState keyMods pos
         world      <- readIORef worldRef
-        world'     <- eventFn ev world
-        writeIORef worldRef world'
+        newWorldMaybe     <- eventFn ev world
+        case newWorldMaybe of
+          Nothing -> exitBackend backendRef
+          Just newWorld -> writeIORef worldRef newWorld
 
 
 -- | Callback for Motion events.
 callback_motion
         :: IORef world                  -- ^ ref to world state
-        -> (Event -> world -> IO world) -- ^ fn to handle input events
+        -> (Event -> world -> IO (Maybe world)) -- ^ fn to handle input events
         -> Callback
 
 callback_motion worldRef eventFn
@@ -157,14 +155,16 @@ handle_motion
 handle_motion worldRef eventFn backendRef pos
  = do   ev       <- motionEvent backendRef pos
         world    <- readIORef worldRef
-        world'   <- eventFn ev world
-        writeIORef worldRef world'
+        newWorldMaybe     <- eventFn ev world
+        case newWorldMaybe of
+          Nothing -> exitBackend backendRef
+          Just newWorld -> writeIORef worldRef newWorld
 
 
 -- | Callback for Handle reshape event.
 callback_reshape
   :: IORef world
-  -> (Event -> world -> IO world)
+  -> (Event -> world -> IO (Maybe world))
   -> Callback
 callback_reshape worldRef eventFN
         = Reshape (handle_reshape worldRef eventFN)
@@ -176,6 +176,9 @@ handle_reshape
   -> ReshapeCallback
 handle_reshape worldRef eventFn stateRef (width,height)
  = do   world  <- readIORef worldRef
-        world' <- eventFn (EventResize (width, height)) world
-        writeIORef worldRef world'
-        viewState_reshape stateRef (width, height)
+        newWorldMaybe <- eventFn (EventResize (width, height)) world
+        case newWorldMaybe of
+          Nothing -> exitBackend backendRef
+          Just newWorld -> do
+            writeIORef worldRef newWorld
+            viewState_reshape stateRef (width, height)

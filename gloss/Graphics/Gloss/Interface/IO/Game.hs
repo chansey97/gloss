@@ -22,9 +22,9 @@ playIO  :: forall world
         -> Color                         -- ^ Background color.
         -> Int                           -- ^ Number of simulation steps to take for each second of real time.
         -> world                         -- ^ The initial world.
-        -> (world -> IO (Maybe Picture)) -- ^ An action to convert the world a picture. Returns @Nothing@ to exit the application.
-        -> (Event -> world -> IO world)  -- ^ A function to handle input events.
-        -> (Float -> world -> IO world)  -- ^ A function to step the world one iteration.
+        -> (world -> IO Picture) -- ^ An action to convert the world a picture.
+        -> (Event -> world -> IO (Maybe world))  -- ^ A function to handle input events.
+        -> (Float -> world -> IO (Maybe world))  -- ^ A function to step the world one iteration.
                                          --   It is passed the period of time (in seconds) needing to be advanced.
         -> IO ()
 
