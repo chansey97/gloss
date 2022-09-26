@@ -13,16 +13,6 @@ import qualified System.Exit                    as System
 import Graphics.Gloss.Internals.Interface.Backend.Types
 import System.IO.Unsafe
 
--- Were we to support freeglut only, we could use GLUT.get to discover
--- whether we are initialized or not. If not, we do a quick initialize,
--- get the screenzie, and then do GLUT.exit. This avoids the use of
--- global variables. Unfortunately, there is no failsafe way to check
--- whether glut is initialized in some older versions of glut, which is
--- what we'd use instead of the global variable to get the required info.
-glutInitialized :: IORef Bool
-{-# NOINLINE glutInitialized #-}
-glutInitialized = unsafePerformIO $ do newIORef False
-
 -- | State information for the GLUT backend.
 data GLUTState
         = GLUTState
@@ -96,7 +86,7 @@ initializeGLUT
         -> IO ()
 
 initializeGLUT _ debug
-  = do initialized <- readIORef glutInitialized
+  = do initialized <- GLUT.initState
        if not initialized
          then do  (_progName, _args)  <- GLUT.getArgsAndInitialize
                   glutVersion         <- get GLUT.glutVersion
@@ -106,8 +96,7 @@ initializeGLUT _ debug
                   GLUT.initialDisplayMode
                     $= [ GLUT.RGBMode
                        , GLUT.DoubleBuffered]
-
-                  writeIORef glutInitialized True
+                  GLUT.actionOnWindowClose $= GLUT.MainLoopReturns
 
                   -- See if our requested display mode is possible
                   displayMode         <- get GLUT.initialDisplayMode
