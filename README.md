@@ -2,7 +2,7 @@ At the time of writing, the original [Gloss](https://github.com/benl23x5/gloss) 
 
 When running Gloss in the REPL, if you close the Gloss window, the REPL session will automatically exit.
 
-Temporary patch: https://github.com/chansey97/gloss/tree/freeglut-master-race 3a75b107ff4df473c8ec5e023a4a8689b07393a4/gloss
+Temporary patch: https://github.com/chansey97/gloss/tree/freeglut-master-race/gloss 3a75b107ff4df473c8ec5e023a4a8689b07393a4
 
 Related issue: https://github.com/benl23x5/gloss/issues/50#issuecomment-1258000072
 
