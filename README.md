@@ -1,3 +1,14 @@
+At the time of writing, the original [Gloss](https://github.com/benl23x5/gloss) has a BUG on windows:
+
+When running Gloss in the REPL, if you close the Gloss window, the REPL session will automatically exit.
+
+Temporary patch: https://github.com/chansey97/gloss/tree/freeglut-master-race
+
+Related issue: https://github.com/benl23x5/gloss/issues/50#issuecomment-1258000072
+
+---
+
+
 gloss
 =====
 
